@@ -17,9 +17,10 @@ exactly the artifact you expected, in the right shape, at the right time, with t
 is no stack trace for "the reviewer had no rubric." The only detection mechanism is reading the
 prompt file — the same mechanism that would have prevented it.
 
-**Guardrails this repo adopts:** a preflight check in CI that the source-of-truth docs resolve
-(`template/.github/workflows/watchman.yml`), and a loud "do not commit with placeholders left in"
-warning in the rubric template.
+**Guardrails the current experiment adopts:** a preflight check in the CI variant that the
+source-of-truth docs resolve
+(`implementations/claude-code-subagent/template/.github/workflows/watchman.yml`), and a loud "do not
+commit with placeholders left in" warning in the rubric scaffold.
 
 ## 2. Prompt rot after a docs migration
 
