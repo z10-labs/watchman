@@ -1,0 +1,11 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Secrets — the CI variant needs ANTHROPIC_API_KEY; never commit it
+.env
+.env.*
+!.env.example

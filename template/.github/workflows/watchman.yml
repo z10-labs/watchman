@@ -1,0 +1,59 @@
+# Optional CI variant of the Watchman.
+#
+# CAUTION — read before enabling. In the source project the CI Watchman was run for four
+# days and then DELETED. Two reasons, both documented in docs/research.md §4.4:
+#   1. Cost/latency: ~10 min, ~37 turns, ~$2.58 per PR — a bad trade for a strategic review
+#      that fires on every push. The local pre-push agent is the recommended default.
+#   2. It shipped pointing at a prompt path that did not exist, so it "reviewed" every PR
+#      with no rubric and nobody noticed (docs/failure-modes.md §1).
+#
+# If you enable this, treat it as a supplement to — never a replacement for — your real CI
+# gate (lint / typecheck / test). Pin the prompt path and verify it resolves.
+
+name: watchman
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: watchman-${{ github.event.pull_request.number }}
+  cancel-in-progress: true # new commits cancel and re-review the latest
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  watchman:
+    runs-on: ubuntu-latest
+    # Loop-breaker: never review auto-fix commits or the bot's own PRs.
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      !startsWith(github.event.pull_request.title, '[auto-fix]')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so base...HEAD diffs resolve
+
+      # Preflight guard: the source-of-truth docs must be present, or the reviewer
+      # has nothing to review against. Fail loud here instead of emitting a hollow verdict.
+      - name: Preflight — source-of-truth present
+        run: |
+          test -f "${BRAIN_PATH:-docs}/map-of-content.md" || {
+            echo "::error::Watchman source-of-truth not found; refusing to review."
+            exit 1
+          }
+        env:
+          BRAIN_PATH: docs
+
+      - name: Watchman review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-opus-4-8
+          # Point at the agent; it reads .claude/prompts/watchman.md as its real prompt.
+          prompt: |
+            Invoke the senior-watchman agent on this PR
+            (base: ${{ github.event.pull_request.base.ref }}).
+            Post exactly one top-level PR comment with the verdict. Do not edit files or push.
