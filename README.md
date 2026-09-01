@@ -2,9 +2,11 @@
 
 > A review function whose entire job is *strategic alignment* — defined by what it refuses to look at.
 
-**Status: exploration & experimentation.** This repo is where we work out the Watchman *concept* and
-try different ways to implement it. Nothing here is a finished, drop-in tool yet — treat it as a
-research space, not a product.
+The Watchman is a concept **z10Labs** owns and is bringing to the world. This repo is where we build
+it, implement it, and discover how far it can go in the software development cycle.
+
+**Status: exploration & experimentation.** Nothing here is a finished, drop-in tool yet — it's a
+research space, and there's far more we haven't explored than we have.
 
 ## The idea
 
@@ -19,29 +21,28 @@ A Watchman exists to answer only that — judging a change against vision, archi
 decisions ledger, while explicitly *refusing* to comment on style, correctness, or test coverage. CI
 does that; the Watchman does what CI can't see.
 
-Read the full definition and invariants in **[docs/concept.md](docs/concept.md)**.
+Read the full statement of the concept in **[docs/concept.md](docs/concept.md)**.
 
 ## This repo separates the concept from its implementations
 
 The concept is the point. Any given implementation — including the first one we built — is just *one
-way* to realise it, and we're still exploring which shapes work.
+way* to realise it, and we're still discovering which shapes work.
 
 | Path | What it is |
 |---|---|
-| [`docs/concept.md`](docs/concept.md) | What a Watchman *is*, independent of how you build one. The invariants any implementation must keep. |
+| [`docs/concept.md`](docs/concept.md) | The Watchman concept, in z10Labs' words. |
 | [`docs/design-principles.md`](docs/design-principles.md) | Ten transferable design principles, each backed by an incident. |
 | [`docs/failure-modes.md`](docs/failure-modes.md) | The four ways a Watchman fails *without a stack trace*. |
 | [`docs/research.md`](docs/research.md) | The full evidence base from the first real deployment. |
-| [`implementations/`](implementations/) | Exploration log of ways to implement the concept — what we've tried and what's still on the table. |
+| [`implementations/`](implementations/) | Exploration log of how we've implemented the concept so far. |
 
 ## Where the material comes from
 
-The concept, the research, and the first implementation all originate in the **TutorSpaces / TutorX**
-project, which ran a Watchman across 189 PRs. That deployment lives here as *one* worked example
-under [`implementations/claude-code-subagent/tutorspaces/`](implementations/claude-code-subagent/tutorspaces/) —
+We built the first Watchman inside the **TutorSpaces / TutorX** project and ran it across 189 PRs.
+That deployment lives here as *one* worked example under
+[`implementations/claude-code-subagent/tutorspaces/`](implementations/claude-code-subagent/tutorspaces/) —
 it's where the lessons came from, but it is deliberately **not** framed as the canonical way to build
-a Watchman. Other approaches (CI action, git hook, standalone service, other agent frameworks) are
-still being explored; see the [implementations index](implementations/README.md).
+a Watchman. What comes next is open; see the [implementations index](implementations/README.md).
 
 ## What a Watchman caught (in that first deployment)
 

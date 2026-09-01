@@ -1,30 +1,17 @@
 # Implementations
 
-Ways to realise the [Watchman concept](../docs/concept.md). This is an **exploration log**, not a
-menu of finished products — we're actively experimenting with different shapes and none is settled.
-The concept lives in [`../docs/`](../docs/); everything here is a way of *trying* it.
+This is where z10Labs experiments with ways to implement the [Watchman](../docs/concept.md). It's an
+**exploration log**, not a menu of finished products — we're actively building, and there's far more
+we haven't tried yet.
 
-## Approaches explored so far
+## What we've built so far
 
 | Approach | Status | Notes |
 |---|---|---|
-| [`claude-code-subagent/`](claude-code-subagent/) | 🧪 experimenting | A Claude Code subagent + rubric prompt, invoked pre-push or by an orchestrator. The first approach we tried — it's where the [TutorSpaces](claude-code-subagent/tutorspaces/) deployment and all the [research](../docs/research.md) come from. |
+| [`claude-code-subagent/`](claude-code-subagent/) | 🧪 experimenting | A Claude Code subagent + rubric prompt, invoked before a PR is opened or by an orchestrator. This is the approach we built inside [TutorSpaces](claude-code-subagent/tutorspaces/); all the [research](../docs/research.md) comes from it. |
 
-## Approaches still on the table
+## What's next
 
-Not built yet — candidate directions we may explore. Add rows as we try them.
-
-- **CI action** — runs on `pull_request`. The TutorSpaces variant of this was deleted after four
-  days on cost/economics grounds ([failure-modes §4](../docs/failure-modes.md)); worth revisiting
-  with a cheaper trigger policy.
-- **Git pre-push hook** — local, zero-infra, author-run.
-- **Standalone bot / service** — framework-agnostic, hosts its own source-of-truth access.
-- **Different agent framework** — the concept isn't Claude-Code-specific; the invariants in
-  [concept.md](../docs/concept.md) should port.
-
-## What every approach must preserve
-
-Whatever the host or trigger, an implementation only counts as a Watchman if it keeps the
-[invariants](../docs/concept.md#invariants-true-of-any-implementation): defined by refusal,
-independent of the author, anchored to an external source of truth, bounded verdict grammar,
-read-only, bounded input, findings routed to durable memory.
+Undecided and open. There are many points in the software development cycle where a Watchman might
+live, and many ways to host one — we're still discovering which work. We'll add approaches here as we
+actually build and test them, not before.
