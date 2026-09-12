@@ -44,17 +44,18 @@ const costCents = (
  */
 export function anthropicGenerate(model = REVIEW_MODEL): GenerateVerdict {
   return async (prompt): Promise<GenerateResult> => {
+    // ai v7 refuses system messages inside `messages`; the stable prefix goes in
+    // `instructions`, still as a system message so the cache breakpoint attaches
+    // to it. Found by the first live CI run, not by a test — see anthropic.test.ts.
     const result = await generateObject({
       model: anthropic(model),
       schema: rawVerdictSchema,
-      messages: [
-        {
-          role: 'system',
-          content: prompt.cacheable,
-          providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
-        },
-        { role: 'user', content: prompt.variable },
-      ],
+      instructions: {
+        role: 'system',
+        content: prompt.cacheable,
+        providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
+      },
+      messages: [{ role: 'user', content: prompt.variable }],
     });
 
     return {
@@ -73,7 +74,7 @@ export function anthropicTriage(model = TRIAGE_MODEL): TriageModel {
   return async ({ paths, lines }) => {
     const { text } = await generateText({
       model: anthropic(model),
-      system: [
+      instructions: [
         'You decide whether a set of changed files could plausibly raise a *strategic*',
         'question — product direction, architecture, tenancy, money, data model, or a',
         'documented decision — as opposed to ordinary implementation work.',
