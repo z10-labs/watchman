@@ -1,0 +1,127 @@
+# The CI deployment of the Watchman.
+#
+# Copy this file into your repository's .github/workflows/, add ANTHROPIC_API_KEY
+# as a repository secret, commit a .watchman.yml and a rubric, and run
+# `pnpm run doctor .` in the engine's directory against your repo before you
+# open the first pull request.
+#
+# It is the same engine as the hosted GitHub App (implementations/github-app),
+# authenticated with the workflow's own GITHUB_TOKEN instead of an App
+# installation. One verdict comment per pull request, edited in place; a check
+# run named watchman/strategic-alignment; the cost of every run in both.
+#
+# The first CI Watchman was deleted after four days. It ran the expensive pass on
+# every push (~$2.58 per PR) against a rubric path that did not exist, and nobody
+# noticed because a reviewer with no rubric still produces a confident verdict
+# (docs/failure-modes.md §1, §4). Every shape below exists because of that:
+#
+#   - preflight is its own step, before anything expensive, and fails the job
+#   - path-rule triage runs before any model call; a docs-only push costs $0.00
+#   - the diff is bounded; over the limit, no model is called
+#   - contents is read-only — the reviewer cannot fix what it reviews
+
+name: watchman
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]
+
+# A new commit cancels the in-flight review. An issue_comment carries the pull
+# request number on the issue, not on pull_request, hence the fallback.
+concurrency:
+  group: watchman-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read          # NOT write. The reviewer must not be able to fix what it reviews.
+  pull-requests: write    # the sticky comment
+  checks: write           # watchman/strategic-alignment
+
+env:
+  # PIN THE REF before enabling: a release tag or a commit SHA, bumped on
+  # purpose. `main` is here only because this file is the template; a moving
+  # ref here is a moving reviewer.
+  WATCHMAN_ENGINE_REPO: z10-labs/watchman
+  WATCHMAN_ENGINE_REF: main
+  WATCHMAN_ENGINE_DIR: .watchman-engine/implementations/github-app
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Mirrors the router's rules, so a runner is not started for events the
+    # router would skip anyway: bots, drafts, [auto-fix] titles, and comments
+    # that are not a /watchman command on a pull request. The router still
+    # decides; this only saves the minutes.
+    #
+    # One rule the router does not have: a slash command costs a billed model
+    # call, so only people with a role on the repository may issue one.
+    if: >-
+      !endsWith(github.actor, '[bot]') &&
+      github.event.pull_request.draft != true &&
+      !startsWith(github.event.pull_request.title, '[auto-fix]') &&
+      (github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/watchman') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+
+    steps:
+      # The repository under review, at its DEFAULT BRANCH. The config and rubric
+      # a pull request is judged against are read from there — never from the
+      # head, where a fork could edit the standard — so that is the copy the
+      # preflight below has to check.
+      - name: Check out the reviewed repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Check out the Watchman engine
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WATCHMAN_ENGINE_REPO }}
+          ref: ${{ env.WATCHMAN_ENGINE_REF }}
+          path: .watchman-engine
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: ${{ env.WATCHMAN_ENGINE_DIR }}/pnpm-lock.yaml
+
+      - name: Install the engine
+        working-directory: ${{ env.WATCHMAN_ENGINE_DIR }}
+        run: pnpm install --frozen-lockfile
+
+      # THE GATE. This is the step v1 did not have. It resolves .watchman.yml,
+      # every required document and the rubric — and checks the rubric is long
+      # enough, has no <PLACEHOLDER> left in it, and declares what is out of
+      # scope. Any miss fails the job here, loudly, before a token is spent.
+      # Do not fold this into the review step and do not continue-on-error it.
+      - name: Preflight — config, required reading and rubric must resolve
+        working-directory: ${{ env.WATCHMAN_ENGINE_DIR }}
+        run: pnpm run doctor "$GITHUB_WORKSPACE"
+
+      # Runs even when preflight failed, so the pull request gets the refusal in
+      # its slot rather than only a red job in the Actions tab. The engine runs
+      # the same preflight again, against the default branch through the API,
+      # and will not review past a failure — it posts "not configured" and exits 1.
+      - name: Review
+        if: ${{ !cancelled() }}
+        working-directory: ${{ env.WATCHMAN_ENGINE_DIR }}
+        run: pnpm run review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # advisory: a strategic blocker is a neutral check and the job passes.
+          # required: it is action_required and the job fails. Flip this only
+          # once the team trusts the reviewer — and note .watchman.yml's
+          # gate.mode wins when the two disagree; this is the fallback.
+          WATCHMAN_GATE_MODE: advisory
