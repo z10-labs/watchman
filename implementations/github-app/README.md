@@ -3,7 +3,7 @@
 A hosted implementation of the [Watchman](../../docs/concept.md): a service that reviews a pull
 request for *strategic alignment* and leaves one verdict on it, edited in place.
 
-**Status: M0–M4 built, not yet run against a live GitHub App.** 236 tests, typecheck and production
+**Status: M0–M4 built, not yet run against a live GitHub App.** 237 tests, typecheck and production
 build all pass. Everything that can be verified without an installation and an API key has been;
 the runbook for the rest is below.
 
@@ -13,7 +13,7 @@ same preflight, same tiering, same renderer; only where the credential comes fro
 
 ```bash
 pnpm install
-pnpm test        # 236 tests
+pnpm test        # 237 tests
 pnpm typecheck
 pnpm build
 pnpm run doctor .   # runs the production preflight against a working copy

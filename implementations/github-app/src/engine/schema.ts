@@ -8,29 +8,44 @@ import { z } from 'zod';
  * them mechanically. A model cannot talk itself — or be talked by a diff — into
  * a gate decision it does not get to make.
  */
+/*
+ * Length limits live in the descriptions, which the model reads, and in the
+ * prompt's verdict rules. The hard `max` values are deliberately looser: a
+ * schema rejection fails the whole review, and an over-long finding is a
+ * worse outcome than a failed run only in the reader's patience, not the gate.
+ */
 export const rawFindingSchema = z.object({
   severity: z
     .enum(['info', 'warn', 'block'])
-    .describe('block only when the change must not merge as it stands'),
-  title: z.string().min(3).max(120).describe('a short, specific claim'),
-  body: z.string().min(10).describe('one paragraph: what you saw and why it matters'),
+    .describe(
+      'default warn; block only when the diff contradicts an active decision or invariant AND would cause real harm if merged',
+    ),
+  title: z.string().min(3).max(120).describe('one specific claim, under 80 characters'),
+  body: z
+    .string()
+    .min(10)
+    .max(1200)
+    .describe('at most 2 sentences: what the diff does, and what it conflicts with'),
   suggested_action: z
     .string()
     .min(3)
-    .describe('fix in this PR / log a decision file / split the PR / accept with rationale'),
+    .max(400)
+    .describe('one short imperative sentence'),
   source: z
     .string()
     .min(1)
-    .describe('what makes this citable: file:line, a decision id, or a document section'),
+    .max(300)
+    .describe('file:line, a decision id, or a document section — something that exists'),
   module: z.string().optional().describe('the area of the product this touches'),
 });
 
 export const rawVerdictSchema = z.object({
-  findings: z.array(rawFindingSchema).max(20),
+  findings: z.array(rawFindingSchema).max(10).describe('at most 3; none is a common answer'),
   bottom_line: z
     .string()
-    .min(10)
-    .describe('would you ship this? if blocking, the minimum bar to unblock'),
+    .min(3)
+    .max(800)
+    .describe('at most 2 sentences; "Ship it." when clean, the minimum bar to unblock when blocking'),
 });
 
 export type RawVerdict = z.infer<typeof rawVerdictSchema>;

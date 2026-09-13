@@ -112,6 +112,18 @@ describe('buildPrompt', () => {
   test('permits an empty finding list explicitly', () => {
     expect(buildPrompt(promptInput).variable).toContain('an empty list is a real');
   });
+
+  test('carries the verdict rules in the cached prefix, after the rubric', () => {
+    const { cacheable } = buildPrompt(promptInput);
+
+    expect(cacheable).toContain('## How to write the verdict');
+    expect(cacheable.indexOf('## How to write the verdict')).toBeGreaterThan(
+      cacheable.indexOf(GOOD_RUBRIC),
+    );
+    expect(cacheable).toContain('At most 3 findings');
+    expect(cacheable).toContain('A missing decision entry on its own is warn, never block.');
+    expect(cacheable).toContain('If you cannot cite it, do not raise it.');
+  });
 });
 
 describe('statusFrom', () => {
