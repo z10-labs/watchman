@@ -20,22 +20,22 @@ export const rawFindingSchema = z.object({
     .describe(
       'default warn; block only when the diff contradicts an active decision or invariant AND would cause real harm if merged',
     ),
-  title: z.string().min(3).max(120).describe('one specific claim, under 80 characters'),
+  title: z.string().min(3).max(120).describe('at most 10 words'),
   body: z
     .string()
     .min(10)
     .max(1200)
-    .describe('at most 2 sentences: what the diff does, and what it conflicts with'),
+    .describe('at most 40 words: what the diff does, then what it conflicts with; one concern only'),
   suggested_action: z
     .string()
     .min(3)
     .max(400)
-    .describe('one short imperative sentence'),
+    .describe('at most 15 words, imperative'),
   source: z
     .string()
     .min(1)
     .max(300)
-    .describe('file:line, a decision id, or a document section — something that exists'),
+    .describe('one or two references: file:line or a decision id; no prose'),
   module: z.string().optional().describe('the area of the product this touches'),
 });
 
@@ -45,7 +45,7 @@ export const rawVerdictSchema = z.object({
     .string()
     .min(3)
     .max(800)
-    .describe('at most 2 sentences; "Ship it." when clean, the minimum bar to unblock when blocking'),
+    .describe('at most 25 words; exactly "Ship it." when clean'),
 });
 
 export type RawVerdict = z.infer<typeof rawVerdictSchema>;

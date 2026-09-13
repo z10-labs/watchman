@@ -121,6 +121,8 @@ describe('buildPrompt', () => {
       cacheable.indexOf(GOOD_RUBRIC),
     );
     expect(cacheable).toContain('At most 3 findings');
+    expect(cacheable).toContain('Body: at most 40 words');
+    expect(cacheable).toContain('One concern per finding');
     expect(cacheable).toContain('A missing decision entry on its own is warn, never block.');
     expect(cacheable).toContain('If you cannot cite it, do not raise it.');
   });

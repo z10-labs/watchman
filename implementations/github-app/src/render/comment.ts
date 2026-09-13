@@ -63,17 +63,16 @@ function renderFindings(verdict: Verdict, headSha: string): string {
         ? ` *(unresolved since \`${shortSha(finding.firstSeenSha)}\`)*`
         : '';
 
+    // Compact on purpose: title, body, then action and source on one line. A
+    // verdict is skimmed between other work; rules between findings only add height.
     return [
-      `**${mark} ${finding.title}**${age}`,
-      '',
+      `${mark} **${finding.title}**${age}`,
       finding.body,
-      '',
-      `*Suggested action:* ${finding.suggestedAction}  `,
-      `*Source:* ${finding.source}`,
-    ].join('\n');
+      `*Suggested action:* ${finding.suggestedAction} · *Source:* ${finding.source}`,
+    ].join('  \n');
   });
 
-  return `\n${blocks.join('\n\n---\n\n')}\n`;
+  return `\n${blocks.join('\n\n')}\n`;
 }
 
 /**
